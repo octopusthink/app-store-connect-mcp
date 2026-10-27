@@ -64,6 +64,7 @@ describe('stdio server in read-only mode', () => {
       // Escaped newlines, as they would appear in a JSON MCP config.
       APP_STORE_CONNECT_PRIVATE_KEY: makeKeyPair().pem.replace(/\n/g, '\\n'),
       APP_STORE_CONNECT_READ_ONLY: 'true',
+      APP_STORE_CONNECT_VENDOR_NUMBER: '85012345',
     });
   });
   afterAll(() => server.client.close());
@@ -75,5 +76,6 @@ describe('stdio server in read-only mode', () => {
     expect(names).not.toContain('submit_for_review');
     expect(server.stderr()).toContain('read-only');
     expect(server.stderr()).not.toContain('not configured');
+    expect(server.client.getInstructions()).toContain('A vendor number is configured');
   });
 });

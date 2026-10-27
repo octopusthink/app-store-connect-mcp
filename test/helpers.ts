@@ -71,6 +71,7 @@ export async function connect(options: {
   fetch?: typeof globalThis.fetch;
   readOnly?: boolean;
   configError?: string;
+  vendorNumber?: string;
 }) {
   const client = options.fetch ? makeClient(options.fetch) : undefined;
   const server = createServer({
@@ -78,6 +79,7 @@ export async function connect(options: {
     configError: options.configError ?? (client ? undefined : 'Missing credentials for test.'),
     spec: new ApiSpec(),
     readOnly: options.readOnly ?? false,
+    vendorNumber: options.vendorNumber,
   });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await server.connect(serverTransport);

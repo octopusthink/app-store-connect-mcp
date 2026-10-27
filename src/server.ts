@@ -20,6 +20,10 @@ function instructions(deps: ToolDeps): string {
     '',
     "For anything the dedicated tools don't cover, search_endpoints finds the endpoint, describe_endpoint shows its parameters and body, and api_request calls it.",
     '',
+    deps.vendorNumber
+      ? 'A vendor number is configured, so get_sales_report and get_finance_report can be called without one.'
+      : "No vendor number is configured. Ask the user for theirs before calling get_sales_report or get_finance_report; it's shown in App Store Connect under Payments and Financial Reports.",
+    '',
     deps.readOnly
       ? 'This server is in read-only mode: write tools are disabled and api_request only allows GET.'
       : 'Write tools change live App Store data that customers and testers see. Confirm with the user before submitting for review, responding to reviews, inviting or removing testers, or deleting anything.',

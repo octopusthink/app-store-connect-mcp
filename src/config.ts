@@ -5,6 +5,7 @@ export const ENV = {
   keyId: 'APP_STORE_CONNECT_KEY_ID',
   privateKey: 'APP_STORE_CONNECT_PRIVATE_KEY',
   readOnly: 'APP_STORE_CONNECT_READ_ONLY',
+  vendorNumber: 'APP_STORE_CONNECT_VENDOR_NUMBER',
 } as const;
 
 export interface Credentials {
@@ -21,6 +22,8 @@ export interface Config {
   /** Non-fatal problems worth logging, such as an unusual-looking Key ID. */
   warnings: string[];
   readOnly: boolean;
+  /** Default vendor number for sales and finance reports. Optional; tools can also take one. */
+  vendorNumber?: string;
 }
 
 export class ConfigError extends Error {
@@ -29,6 +32,7 @@ export class ConfigError extends Error {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const KEY_ID = /^[A-Z0-9]{10}$/;
+const VENDOR_NUMBER = /^\d+$/;
 
 /**
  * Parses the contents of an App Store Connect `.p8` file into a key object.
@@ -81,8 +85,15 @@ function isTruthy(value: string | undefined): boolean {
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
-  const readOnly = isTruthy(env[ENV.readOnly]);
   const warnings: string[] = [];
+  const vendorNumber = env[ENV.vendorNumber]?.trim() || undefined;
+  if (vendorNumber && !VENDOR_NUMBER.test(vendorNumber)) {
+    warnings.push(
+      `${ENV.vendorNumber} does not look like a vendor number (digits only, such as 85012345). Find it in App Store Connect under Payments and Financial Reports.`,
+    );
+  }
+  // Settings that don't depend on the credentials, included whether or not they load.
+  const base = { warnings, readOnly: isTruthy(env[ENV.readOnly]), vendorNumber };
 
   const issuerId = env[ENV.issuerId]?.trim();
   const keyId = env[ENV.keyId]?.trim();
@@ -96,9 +107,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
 
   if (!issuerId || !keyId || !rawKey?.trim()) {
     return {
+      ...base,
       error: `App Store Connect credentials are not configured. Missing environment variable${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}. Add ${missing.length > 1 ? 'them' : 'it'} to this MCP server's configuration and restart it.`,
-      warnings,
-      readOnly,
     };
   }
 
@@ -114,16 +124,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   }
 
   try {
-    return {
-      credentials: { issuerId, keyId, privateKey: parsePrivateKey(rawKey) },
-      warnings,
-      readOnly,
-    };
+    return { ...base, credentials: { issuerId, keyId, privateKey: parsePrivateKey(rawKey) } };
   } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : String(error),
-      warnings,
-      readOnly,
-    };
+    return { ...base, error: error instanceof Error ? error.message : String(error) };
   }
 }

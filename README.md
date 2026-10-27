@@ -20,17 +20,19 @@ An [MCP](https://modelcontextprotocol.io) server for Apple's [App Store Connect 
    - If a tool returns a 403 error, the key's role doesn't allow that request.
 3. Download the `AuthKey_XXXXXXXXXX.p8` file. Apple only lets you download it once.
 4. Note the **Key ID** (shown next to the key) and the **Issuer ID** (shown above the list of keys).
+5. For sales and finance reports, also note your **vendor number**. It's shown at the top left of **Payments and Financial Reports** in App Store Connect.
 
 ## Set up
 
-The server reads three environment variables:
+The server reads these environment variables. The first three are required:
 
-| Variable                        | Value                                                       |
-| ------------------------------- | ----------------------------------------------------------- |
-| `APP_STORE_CONNECT_ISSUER_ID`   | Your Issuer ID, e.g. `57246542-96fe-1a63-e053-0824d011072a` |
-| `APP_STORE_CONNECT_KEY_ID`      | Your Key ID, e.g. `2X9R4HXF34`                              |
-| `APP_STORE_CONNECT_PRIVATE_KEY` | The contents of the `.p8` file, as text                     |
-| `APP_STORE_CONNECT_READ_ONLY`   | Optional. `true` hides all write tools                      |
+| Variable                          | Value                                                                                     |
+| --------------------------------- | ----------------------------------------------------------------------------------------- |
+| `APP_STORE_CONNECT_ISSUER_ID`     | Your Issuer ID, e.g. `57246542-96fe-1a63-e053-0824d011072a`                               |
+| `APP_STORE_CONNECT_KEY_ID`        | Your Key ID, e.g. `2X9R4HXF34`                                                            |
+| `APP_STORE_CONNECT_PRIVATE_KEY`   | The contents of the `.p8` file, as text                                                   |
+| `APP_STORE_CONNECT_VENDOR_NUMBER` | Optional. Your vendor number, e.g. `85012345`, used by the sales and finance report tools |
+| `APP_STORE_CONNECT_READ_ONLY`     | Optional. `true` hides all write tools                                                    |
 
 The private key can be pasted as a normal multi-line PEM, as a single line with `\n` escapes (as JSON configs need), or as just the base64 body without the `BEGIN`/`END` lines.
 
@@ -41,10 +43,11 @@ claude mcp add app-store-connect --scope user \
   -e APP_STORE_CONNECT_ISSUER_ID=your-issuer-id \
   -e APP_STORE_CONNECT_KEY_ID=your-key-id \
   -e APP_STORE_CONNECT_PRIVATE_KEY="$(cat ~/Downloads/AuthKey_XXXXXXXXXX.p8)" \
+  -e APP_STORE_CONNECT_VENDOR_NUMBER=your-vendor-number \
   -- npx -y @octopusthink/app-store-connect-mcp
 ```
 
-Leave out `--scope user` to add it to the current project only. Run `/mcp` inside Claude Code to check it connected.
+The vendor number line is optional: leave it out if you don't need sales or finance reports. Leave out `--scope user` to add the server to the current project only. Run `/mcp` inside Claude Code to check it connected.
 
 ### Claude Desktop
 
@@ -59,7 +62,8 @@ Open **Settings → Developer → Edit Config** and add the server to `claude_de
       "env": {
         "APP_STORE_CONNECT_ISSUER_ID": "your-issuer-id",
         "APP_STORE_CONNECT_KEY_ID": "your-key-id",
-        "APP_STORE_CONNECT_PRIVATE_KEY": "-----BEGIN PRIVATE KEY-----\nMIGTAgEAMBMGByqGSM49...\n-----END PRIVATE KEY-----"
+        "APP_STORE_CONNECT_PRIVATE_KEY": "-----BEGIN PRIVATE KEY-----\nMIGTAgEAMBMGByqGSM49...\n-----END PRIVATE KEY-----",
+        "APP_STORE_CONNECT_VENDOR_NUMBER": "your-vendor-number"
       }
     }
   }
@@ -85,7 +89,7 @@ Run `npx -y @octopusthink/app-store-connect-mcp` as a stdio server with the envi
 - "Create version 2.1 of Example, use the latest build, and set the release notes to …"
 - "Add build 2.1 (57) to the Beta Testers group and set the test notes."
 - "Invite sam@example.com to the Internal QA TestFlight group."
-- "How many units did we sell yesterday?" (needs your vendor number)
+- "How many units did we sell yesterday?" (uses your vendor number)
 - "Start an Xcode Cloud build of the Release workflow on main."
 - "Set up a phased release for the current version." (through `api_request`)
 

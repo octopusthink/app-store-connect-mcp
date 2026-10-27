@@ -385,6 +385,57 @@ describe('tools', () => {
     });
   });
 
+  describe('vendor number', () => {
+    const report = async () => {
+      const { gzipSync } = await import('node:zlib');
+      return new Response(gzipSync('Provider\tUnits\nAPPLE\t1'), {
+        headers: { 'content-type': 'application/a-gzip' },
+      });
+    };
+
+    it.each(['get_sales_report', 'get_finance_report'])(
+      '%s uses the configured vendor number when none is passed',
+      async (tool) => {
+        const { fetch, requests } = mockFetch(report);
+        session = await connect({ fetch, vendorNumber: '85012345' });
+        const result = await session.call(
+          tool,
+          tool === 'get_finance_report' ? { reportDate: '2026-09' } : {},
+        );
+
+        expect(result.isError).toBe(false);
+        expect(requests[0]?.url.searchParams.get('filter[vendorNumber]')).toBe('85012345');
+      },
+    );
+
+    it('prefers a vendor number passed to the tool', async () => {
+      const { fetch, requests } = mockFetch(report);
+      session = await connect({ fetch, vendorNumber: '85012345' });
+      await session.call('get_sales_report', { vendorNumber: '99999999' });
+      expect(requests[0]?.url.searchParams.get('filter[vendorNumber]')).toBe('99999999');
+    });
+
+    it('explains how to set one when there is none', async () => {
+      const { fetch, requests } = mockFetch();
+      session = await connect({ fetch });
+      const result = await session.call('get_sales_report');
+
+      expect(result.isError).toBe(true);
+      expect(result.text).toContain('APP_STORE_CONNECT_VENDOR_NUMBER');
+      expect(requests).toHaveLength(0);
+    });
+
+    it('tells the model whether one is configured', async () => {
+      session = await connect({ vendorNumber: '85012345' });
+      expect(session.mcp.getInstructions()).toContain('A vendor number is configured');
+      expect(session.mcp.getInstructions()).not.toContain('85012345');
+      await session.close();
+
+      session = await connect({});
+      expect(session.mcp.getInstructions()).toContain('No vendor number is configured');
+    });
+  });
+
   it('api_request simplifies JSON:API responses unless raw', async () => {
     const document = {
       data: { type: 'apps', id: '1', attributes: { name: 'X' }, links: { self: 'y' } },

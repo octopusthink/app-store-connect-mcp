@@ -1,13 +1,26 @@
 import * as z from 'zod';
-import { defineTool } from './define.ts';
+import { ENV } from '../config.ts';
+import { defineTool, type ToolContext } from './define.ts';
 import { formatReport } from './shared.ts';
 
 const vendorNumber = z
   .string()
   .min(1)
+  .optional()
   .describe(
-    'Vendor number, shown in App Store Connect under Payments and Financial Reports (top left).',
+    `Vendor number, shown in App Store Connect under Payments and Financial Reports (top left). Omit it to use the one configured in ${ENV.vendorNumber}.`,
   );
+
+/** The vendor number passed to the tool, or the configured default. */
+function resolveVendorNumber(given: string | undefined, context: ToolContext): string {
+  const vendor = given ?? context.vendorNumber;
+  if (!vendor) {
+    throw new Error(
+      `No vendor number. Pass vendorNumber, or set ${ENV.vendorNumber} in this MCP server's configuration. It's shown in App Store Connect under Payments and Financial Reports.`,
+    );
+  }
+  return vendor;
+}
 
 const maxRows = z
   .number()
@@ -63,7 +76,7 @@ export const getSalesReport = defineTool({
       path: '/v1/salesReports',
       accept: REPORT_ACCEPT,
       query: {
-        'filter[vendorNumber]': args.vendorNumber,
+        'filter[vendorNumber]': resolveVendorNumber(args.vendorNumber, context),
         'filter[frequency]': args.frequency,
         'filter[reportType]': args.reportType,
         'filter[reportSubType]': args.reportSubType,
@@ -106,7 +119,7 @@ export const getFinanceReport = defineTool({
       path: '/v1/financeReports',
       accept: REPORT_ACCEPT,
       query: {
-        'filter[vendorNumber]': args.vendorNumber,
+        'filter[vendorNumber]': resolveVendorNumber(args.vendorNumber, context),
         'filter[reportType]': args.reportType,
         'filter[regionCode]': args.regionCode,
         'filter[reportDate]': args.reportDate,

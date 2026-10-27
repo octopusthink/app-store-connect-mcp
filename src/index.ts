@@ -20,6 +20,7 @@ const deps = {
   configError: config.error,
   spec: new ApiSpec(),
   readOnly: config.readOnly,
+  vendorNumber: config.vendorNumber,
 };
 
 serveStdio(() => createServer(deps), { onerror: (error) => log(`Error: ${error.message}`) });

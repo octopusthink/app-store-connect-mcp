@@ -63,6 +63,24 @@ describe('loadConfig', () => {
     expect(config.error).not.toContain('secret-garbage-value');
   });
 
+  it('reads an optional vendor number, even without credentials', () => {
+    expect(loadConfig({ ...complete, [ENV.vendorNumber]: ' 85012345 ' }).vendorNumber).toBe(
+      '85012345',
+    );
+    expect(loadConfig({ [ENV.vendorNumber]: '85012345' })).toMatchObject({
+      vendorNumber: '85012345',
+      error: expect.stringContaining(ENV.issuerId),
+    });
+    expect(loadConfig(complete).vendorNumber).toBeUndefined();
+    expect(loadConfig({ ...complete, [ENV.vendorNumber]: '  ' }).vendorNumber).toBeUndefined();
+  });
+
+  it('warns about a vendor number that is not all digits', () => {
+    const config = loadConfig({ ...complete, [ENV.vendorNumber]: 'ACME-123' });
+    expect(config.vendorNumber).toBe('ACME-123');
+    expect(config.warnings).toEqual([expect.stringContaining(ENV.vendorNumber)]);
+  });
+
   it('warns when the Issuer ID and Key ID look swapped', () => {
     const config = loadConfig({ ...complete, [ENV.issuerId]: KEY_ID, [ENV.keyId]: ISSUER_ID });
     expect(config.credentials).toBeDefined();

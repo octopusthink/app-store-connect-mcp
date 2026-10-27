@@ -12,11 +12,14 @@ export interface ToolDeps {
   configError: string | undefined;
   spec: ApiSpec;
   readOnly: boolean;
+  /** Default vendor number for reports, from APP_STORE_CONNECT_VENDOR_NUMBER. */
+  vendorNumber?: string | undefined;
 }
 
 export interface ToolContext {
   readonly client: AscClient;
   readonly spec: ApiSpec;
+  readonly vendorNumber: string | undefined;
   readonly signal: AbortSignal;
 }
 
@@ -70,6 +73,7 @@ export function registerTool(server: McpServer, tool: ToolDefinition, deps: Tool
           return deps.client;
         },
         spec: deps.spec,
+        vendorNumber: deps.vendorNumber,
         signal: ctx.mcpReq.signal,
       };
       try {
