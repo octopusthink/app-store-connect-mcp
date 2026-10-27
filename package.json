@@ -1,6 +1,6 @@
 {
   "name": "@octopusthink/app-store-connect-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server for Apple's App Store Connect API: apps, metadata, TestFlight, reviews, reports, Xcode Cloud and more.",
   "keywords": [
     "mcp",
